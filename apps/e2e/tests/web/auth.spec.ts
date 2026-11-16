@@ -257,7 +257,8 @@ test.describe('keyboard and routing basics', () => {
     const ctx = await browser.newContext({ baseURL: BASE, locale: 'en-US' });
     const page = await ctx.newPage();
     await page.goto('/xx');
-    await expect(page.getByText('This page could not be found.')).toBeVisible();
+    // /xx is not a language: it is treated as a path under the visitor's own language -> the app's not-found page
+    await expect(page.getByText('Page not found')).toBeVisible();
     await page.goto('/en/this/page/does/not/exist');
     await expect(page.getByText('Page not found')).toBeVisible();
     await ctx.close();

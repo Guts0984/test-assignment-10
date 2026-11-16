@@ -311,7 +311,7 @@ test.describe('brute force does not take everybody down', () => {
       probe.status() === 429,
       'customer50 is still locked by an earlier run: start a fresh stack',
     );
-    const codes: number[] = [];
+    const codes: number[] = [probe.status()]; // the probe was attempt number 1
     let retryAfter: string | undefined;
     for (let i = 0; i < 7; i++) {
       const r = await v.post('/api/auth/login', {
@@ -321,7 +321,8 @@ test.describe('brute force does not take everybody down', () => {
       if (r.status() === 429) retryAfter = r.headers()['retry-after'];
     }
     expect(codes.slice(0, 5)).toEqual([401, 401, 401, 401, 401]);
-    expect(codes.slice(5)).toEqual([429, 429]);
+    expect(codes.length).toBeGreaterThan(5);
+    expect(codes.slice(5).every((c) => c === 429)).toBe(true); // everything after the 5th wrong guess is refused
     expect(Number(retryAfter)).toBeGreaterThan(0);
     // the right password is refused too while blocked (otherwise guessing would continue unthrottled)
     const right = await v.post('/api/auth/login', { data: victim });
