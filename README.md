@@ -22,11 +22,11 @@ docker compose up --build
 
 That is the only manual step: migrations and the seed run automatically when the `api` container starts (the seed is skipped if the database already has data).
 
-| URL                        | What                                                |
-| -------------------------- | --------------------------------------------------- |
-| http://localhost:8080      | the shop (nginx -> web / api)                       |
-| http://localhost:8080/docs | Swagger UI (also `/docs-json`)                      |
-| `localhost:5433`           | PostgreSQL (`POSTGRES_HOST_PORT`)                   |
+| URL                        | What                              |
+| -------------------------- | --------------------------------- |
+| http://localhost:8080      | the shop (nginx -> web / api)     |
+| http://localhost:8080/docs | Swagger UI (also `/docs-json`)    |
+| `localhost:5433`           | PostgreSQL (`POSTGRES_HOST_PORT`) |
 
 The web (3000) and api (4000) containers are **not** published to the host: nginx is the only entry point, so every request passes its rate limits, body-size cap and header overwrite (`/api/*` goes to the api, everything else to the web). Ports are configurable in `.env` (`NGINX_HOST_PORT`, `POSTGRES_HOST_PORT`).
 
