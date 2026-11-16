@@ -24,8 +24,8 @@ That is the only manual step: migrations and the seed run automatically when the
 
 | URL                        | What                                                |
 | -------------------------- | --------------------------------------------------- |
-| http://localhost:8088      | the shop (nginx -> web / api)                       |
-| http://localhost:8088/docs | Swagger UI (also `/docs-json`)                      |
+| http://localhost:8080      | the shop (nginx -> web / api)                       |
+| http://localhost:8080/docs | Swagger UI (also `/docs-json`)                      |
 | `localhost:5433`           | PostgreSQL (`POSTGRES_HOST_PORT`)                   |
 
 The web (3000) and api (4000) containers are **not** published to the host: nginx is the only entry point, so every request passes its rate limits, body-size cap and header overwrite (`/api/*` goes to the api, everything else to the web). Ports are configurable in `.env` (`NGINX_HOST_PORT`, `POSTGRES_HOST_PORT`).
@@ -46,7 +46,7 @@ pnpm install
 docker compose up -d postgres        # tests use a REAL PostgreSQL (each test file creates its own database)
 pnpm lint && pnpm typecheck && pnpm test
 ./scripts/smoke-compose.sh           # needs `docker compose up -d`: hostile client against nginx
-pnpm --filter @shop/e2e install:browsers && pnpm --filter @shop/e2e e2e   # Playwright against http://localhost:8088
+pnpm --filter @shop/e2e install:browsers && pnpm --filter @shop/e2e e2e   # Playwright against http://localhost:8080
 ```
 
 `TEST_DATABASE_URL` (see `.env.example`) points tests at the compose PostgreSQL. CI (`.github/workflows/ci.yml`) runs lint, format check, typecheck and all unit/integration tests on every commit against a PostgreSQL service container, and a second job boots the compose stack and runs the smoke test and the e2e suite.

@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Page, request as pwRequest } from '@playwright/test';
 
-export const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:8088';
+export const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:8080';
 
 /** Seeded demo accounts (see README). Each test takes its own customer so carts and limits never collide. */
 export const customer = (n: number) => ({

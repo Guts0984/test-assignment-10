@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Runs against the REAL composed stack (nginx -> web/api -> postgres, seeded), default http://localhost:8088.
+ * Runs against the REAL composed stack (nginx -> web/api -> postgres, seeded), default http://localhost:8080.
  * One worker: the tests share one database, and each test uses its own seeded customer.
  */
 export default defineConfig({
@@ -13,7 +13,7 @@ export default defineConfig({
   retries: 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:8088',
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:8080',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     locale: 'en-US',

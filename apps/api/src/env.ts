@@ -25,7 +25,7 @@ const shape = {
   WEBHOOK_SECRET: z.string().min(32, 'WEBHOOK_SECRET must be at least 32 characters'),
 
   // --- http / security
-  ALLOWED_ORIGINS: csv.default(['http://localhost:8088', 'http://localhost:3000']),
+  ALLOWED_ORIGINS: csv.default(['http://localhost:8080']),
   COOKIE_SECURE: bool.default(false),
   SESSION_TTL_HOURS: int(168, 1),
   TRUST_PROXY_HOPS: int(0, 0, 10),
@@ -41,7 +41,7 @@ const shape = {
 
   // --- payment stub
   WEBHOOK_URL: z.string().url().optional(),
-  PUBLIC_WEB_URL: z.string().url().default('http://localhost:8088'),
+  PUBLIC_WEB_URL: z.string().url().default('http://localhost:8080'),
   STUB_DELAY_SECONDS: int(30, 0),
   WEBHOOK_TOLERANCE_SECONDS: int(300, 1),
 

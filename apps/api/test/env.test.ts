@@ -20,7 +20,7 @@ describe('env.ts', () => {
     expect(e.JOBS_ENABLED).toBe(true);
     expect(e.TRUST_PROXY_HOPS).toBe(0);
     expect(e.WEBHOOK_URL).toBe('http://localhost:4000/payments/webhook');
-    expect(e.ALLOWED_ORIGINS).toContain('http://localhost:8088');
+    expect(e.ALLOWED_ORIGINS).toContain('http://localhost:8080');
   });
   it('has NO defaults for secrets and lists every missing one', () => {
     expect(() => parseEnv({})).toThrow(/DATABASE_URL[\s\S]*SESSION_SECRET[\s\S]*WEBHOOK_SECRET/);
