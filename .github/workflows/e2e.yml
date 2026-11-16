@@ -1,0 +1,61 @@
+name: E2E
+
+# Everything that needs the REAL stack (nginx -> web/api -> postgres). Kept apart from ci.yml
+# (lint, types, unit and integration tests) so it has its own pipeline and its own status.
+# Every job boots its OWN throwaway copy of the stack (own compose project, ports and database),
+# so the jobs run in parallel and never share data.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  edge:
+    name: nginx check + smoke (production limits)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # RELAXED=0: every limit exactly as in .env.example - this is what proves the edge really works
+      - run: RELAXED=0 STACK_STEPS="nginx smoke" bash scripts/test-stack.sh
+      - if: failure()
+        run: tail -300 /tmp/shop-e2e-api.log
+
+  e2e:
+    name: e2e - ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: security (authz, hostile input, webhooks, races)
+            path: tests/security
+          - suite: web (login, catalogue, product page, manager, language, theme)
+            path: tests/web
+          - suite: flows (buy, late payment, cancel, return)
+            path: tests/flows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @shop/e2e install:browsers
+      - run: STACK_STEPS="e2e" bash scripts/test-stack.sh ${{ matrix.path }}
+      - if: failure()
+        run: tail -300 /tmp/shop-e2e-api.log
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ strategy.job-index }}
+          path: apps/e2e/playwright-report
+          if-no-files-found: ignore

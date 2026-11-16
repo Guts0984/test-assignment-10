@@ -9,7 +9,7 @@ import {
   uiLogin,
   uniqueCode,
   resetCart,
-} from './helpers';
+} from '../helpers';
 
 test('partial return of a delivered order: the refund includes the discount share of the returned items and not the delivery', async ({
   page,

@@ -107,7 +107,20 @@ describe('order page refreshes itself exactly when something can still change', 
 
 describe('redirect targets cannot leave the site', () => {
   it.each([
-    ['/uk/orders/1', '/uk/orders/1'],
+    ['/uk/orders/1', '/orders/1'], // the language is added by the router, so it must not be in `next`
+    ['/en/orders', '/orders'],
+    ['/en', '/'],
+    ['/uk', '/'],
+    ['/en?x=1', '/?x=1'],
+    ['/en#top', '/#top'],
+    ['/english', '/english'], // only a whole language segment is a prefix
+    ['/orders/1?tab=refunds', '/orders/1?tab=refunds'],
+    ['/en//evil.example', '/'], // becomes protocol-relative once the language is stripped
+    ['/uk/\\evil.example', '/'],
+    ['/login', '/'], // the login page is no destination
+    ['/en/login', '/'],
+    ['/login?next=/cart', '/'],
+    ['/loginx', '/loginx'],
     ['/', '/'],
     ['//evil.example', '/'],
     ['https://evil.example', '/'],

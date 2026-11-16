@@ -7,7 +7,7 @@ import {
   openPaymentTab,
   uiLogin,
   resetCart,
-} from './helpers';
+} from '../helpers';
 
 async function placeOrderViaUi(page: import('@playwright/test').Page, productName: string) {
   await addToCartViaUi(page, productName);

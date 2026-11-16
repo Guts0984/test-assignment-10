@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { BASE } from './helpers';
+import { BASE } from '../helpers';
 
 const bg = (page: import('@playwright/test').Page) =>
   page.evaluate(() => getComputedStyle(document.body).backgroundColor);

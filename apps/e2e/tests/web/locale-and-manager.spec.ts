@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createProduct, customer, managerApi, resetCart, uiLogin, uniqueCode } from './helpers';
+import { createProduct, customer, managerApi, resetCart, uiLogin, uniqueCode } from '../helpers';
 
 test('uk and en: money, dates and plurals follow the locale', async ({ page }) => {
   const mgr = await managerApi();

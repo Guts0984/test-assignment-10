@@ -22,10 +22,15 @@ export const DEFAULT_CATALOG_STATE: CatalogUrlState = {
 
 type Params = { get(name: string): string | null };
 
+/** Removes control characters (NUL, line breaks, tabs, DEL) - they can only come from a crafted link. */
+export const stripControlChars = (s: string): string =>
+  [...s].filter((c) => c.charCodeAt(0) > 31 && c.charCodeAt(0) !== 127).join('');
+
 export function parseCatalogParams(sp: Params): CatalogUrlState {
   const sort = sp.get('sort');
   return {
-    q: (sp.get('q') ?? '').slice(0, 100),
+    // control characters (NUL, newlines...) can only come from a crafted link, never from typing
+    q: stripControlChars(sp.get('q') ?? '').slice(0, 100),
     category: sp.get('category') ?? '',
     minPrice: sp.get('minPrice') ?? '',
     maxPrice: sp.get('maxPrice') ?? '',

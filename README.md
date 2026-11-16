@@ -49,7 +49,7 @@ pnpm lint && pnpm typecheck && pnpm test
 pnpm --filter @shop/e2e install:browsers && pnpm test:stack   # smoke + Playwright on a THROWAWAY stack (own ports, own database, removed afterwards)
 ```
 
-`TEST_DATABASE_URL` (see `.env.example`) points tests at the compose PostgreSQL. CI (`.github/workflows/ci.yml`) runs lint, format check, typecheck and all unit/integration tests on every commit against a PostgreSQL service container, and a second job boots the compose stack and runs the smoke test and the e2e suite.
+`TEST_DATABASE_URL` (see `.env.example`) points tests at the compose PostgreSQL. CI (`.github/workflows/ci.yml`) runs lint, format check, typecheck and all unit/integration tests on every commit against a PostgreSQL service container, and a separate workflow (`.github/workflows/e2e.yml`) boots throwaway copies of the compose stack in parallel jobs: the nginx check + smoke test (with production limits) and the Playwright suites (security, web, flows).
 
 What the suites cover:
 
