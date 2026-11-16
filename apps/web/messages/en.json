@@ -29,7 +29,13 @@
     "status": "Status",
     "customer": "Customer",
     "active": "Active",
-    "inactive": "Hidden"
+    "inactive": "Hidden",
+    "theme": {
+      "label": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
   },
   "nav": {
     "catalog": "Catalog",
@@ -192,7 +198,10 @@
     "discount": "Discount ({code})",
     "discountPlain": "Discount",
     "delivery": "Delivery",
-    "deliveryMethod": { "pickup": "Pickup", "courier": "Courier" },
+    "deliveryMethod": {
+      "pickup": "Pickup",
+      "courier": "Courier"
+    },
     "address": "Address",
     "reservedUntil": "Reserved for you for",
     "reservationExpired": "The reservation has expired, the order is being cancelled…",
@@ -208,7 +217,10 @@
     "history": "History",
     "refunds": "Refunds",
     "refundLine": "{amount} — {status}",
-    "refundStatus": { "pending": "in progress", "succeeded": "returned" },
+    "refundStatus": {
+      "pending": "in progress",
+      "succeeded": "returned"
+    },
     "refundedTotal": "Refunded",
     "refundKind": {
       "cancellation": "Order cancelled",
@@ -307,7 +319,10 @@
       "new": "New promo code",
       "code": "Code",
       "type": "Type",
-      "types": { "percent": "Percent", "fixed": "Fixed amount" },
+      "types": {
+        "percent": "Percent",
+        "fixed": "Fixed amount"
+      },
       "value": "Value",
       "valuePercent": "Discount, %",
       "valueFixed": "Discount, ₴",

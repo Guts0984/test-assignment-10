@@ -20,7 +20,7 @@ export function TotalsList({
         <dd data-testid="totals-subtotal">{formatMoney(totals.subtotal, locale)}</dd>
       </div>
       {totals.discount > 0 ? (
-        <div className="flex justify-between text-green-800">
+        <div className="flex justify-between text-success-foreground">
           <dt>{t('discount')}</dt>
           <dd data-testid="totals-discount">−{formatMoney(totals.discount, locale)}</dd>
         </div>

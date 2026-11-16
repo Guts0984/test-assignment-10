@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { cartItemCount, useCart } from '@/entities/cart';
 import { useLogout, useMe } from '@/entities/session';
 import { LocaleSwitcher } from '@/features/locale-switcher';
+import { ThemeSwitcher } from '@/features/theme-switcher';
 import { Link, useRouter } from '@/shared/i18n/navigation';
 import { Button } from '@/shared/ui';
 
@@ -67,6 +68,7 @@ export function Header() {
           ) : null}
         </nav>
         <LocaleSwitcher />
+        <ThemeSwitcher />
         {me.data ? (
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{me.data.email}</span>

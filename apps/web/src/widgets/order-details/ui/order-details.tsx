@@ -124,7 +124,7 @@ export function OrderDetails({
               <dd>{money(order.subtotal)}</dd>
             </div>
             {order.discount > 0 ? (
-              <div className="flex justify-between text-green-800">
+              <div className="flex justify-between text-success-foreground">
                 <dt>
                   {order.promoCode ? t('discount', { code: order.promoCode }) : t('discountPlain')}
                 </dt>

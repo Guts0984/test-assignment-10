@@ -29,7 +29,13 @@
     "status": "Статус",
     "customer": "Покупець",
     "active": "Активний",
-    "inactive": "Прихований"
+    "inactive": "Прихований",
+    "theme": {
+      "label": "Тема",
+      "light": "Світла",
+      "dark": "Темна",
+      "system": "Системна"
+    }
   },
   "nav": {
     "catalog": "Каталог",
@@ -192,7 +198,10 @@
     "discount": "Знижка ({code})",
     "discountPlain": "Знижка",
     "delivery": "Доставка",
-    "deliveryMethod": { "pickup": "Самовивіз", "courier": "Кур'єр" },
+    "deliveryMethod": {
+      "pickup": "Самовивіз",
+      "courier": "Кур'єр"
+    },
     "address": "Адреса",
     "reservedUntil": "Товар зарезервовано ще на",
     "reservationExpired": "Резерв закінчився, замовлення скасовується…",
@@ -208,7 +217,10 @@
     "history": "Історія",
     "refunds": "Повернення коштів",
     "refundLine": "{amount} — {status}",
-    "refundStatus": { "pending": "виконується", "succeeded": "повернено" },
+    "refundStatus": {
+      "pending": "виконується",
+      "succeeded": "повернено"
+    },
     "refundedTotal": "Повернено",
     "refundKind": {
       "cancellation": "Скасування замовлення",
@@ -307,7 +319,10 @@
       "new": "Новий промокод",
       "code": "Код",
       "type": "Тип",
-      "types": { "percent": "Відсоток", "fixed": "Фіксована сума" },
+      "types": {
+        "percent": "Відсоток",
+        "fixed": "Фіксована сума"
+      },
       "value": "Значення",
       "valuePercent": "Знижка, %",
       "valueFixed": "Знижка, ₴",

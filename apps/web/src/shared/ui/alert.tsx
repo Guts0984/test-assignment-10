@@ -5,10 +5,10 @@ import { cn } from '../lib/cn';
 const alertVariants = cva('relative w-full rounded-lg border p-4 text-sm', {
   variants: {
     tone: {
-      info: 'border-blue-200 bg-blue-50 text-blue-900',
-      warning: 'border-amber-300 bg-amber-50 text-amber-950',
-      danger: 'border-red-300 bg-red-50 text-red-900',
-      success: 'border-green-300 bg-green-50 text-green-900',
+      info: 'border-info-border bg-info text-info-foreground',
+      warning: 'border-warning-border bg-warning text-warning-foreground',
+      danger: 'border-danger-border bg-danger text-danger-foreground',
+      success: 'border-success-border bg-success text-success-foreground',
     },
   },
   defaultVariants: { tone: 'info' },

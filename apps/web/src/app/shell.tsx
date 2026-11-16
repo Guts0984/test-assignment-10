@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { Header } from '@/widgets/header';
 import { Providers } from './providers';
 
@@ -9,7 +10,10 @@ export async function Shell({ locale, children }: { locale: string; children: Re
   const messages = await getMessages();
   const t = await getTranslations('common');
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
         <NextIntlClientProvider messages={messages}>
           <Providers>

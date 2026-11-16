@@ -72,7 +72,7 @@ export function CartLines({ lines }: { lines: CartLineDto[] }) {
             <TD>
               {formatMoney(l.unitPrice, locale)}
               {l.priceChanged ? (
-                <div className="text-xs text-amber-800">
+                <div className="text-xs text-warning-foreground">
                   {t('priceWas', { price: formatMoney(l.priceSeen, locale) })}
                 </div>
               ) : null}
