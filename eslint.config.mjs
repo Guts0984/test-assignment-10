@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 /** FSD layers, top → bottom. A layer may import only from layers below it. */
@@ -68,6 +69,11 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    files: ['apps/web/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: { 'react-hooks/rules-of-hooks': 'error', 'react-hooks/exhaustive-deps': 'warn' },
   },
   {
     // NestJS needs classes + decorators + injected params typed as classes.

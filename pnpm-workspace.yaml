@@ -3,7 +3,11 @@ packages:
   - packages/*
 
 # Postinstall scripts are opt-in. esbuild (drizzle-kit, tsx, vite) ships its binary as an optional
-# dependency, so its script is only an optimisation; scarf is swagger-ui's analytics ping.
+# dependency, so its script is only an optimisation; the others are optional native accelerators
+# (file watching, swc) or analytics pings that Next.js / swagger do not need to function.
 allowBuilds:
   esbuild: true
+  sharp: true
   '@scarf/scarf': false
+  '@parcel/watcher': false
+  '@swc/core': false

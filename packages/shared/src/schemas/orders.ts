@@ -7,7 +7,7 @@ export const addressSchema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(/^\+?[0-9][0-9 ()-]{6,19}$/, 'invalid phone'),
+    .regex(/^\+?[0-9(][0-9 ()-]{6,19}$/, 'invalid phone'),
   city: z.string().trim().min(2).max(80),
   street: z.string().trim().min(2).max(120),
   building: z.string().trim().min(1).max(20),
