@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "lib": ["ES2023", "dom"],
+    "module": "commonjs",
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": ["tests", "playwright.config.ts"]
+}

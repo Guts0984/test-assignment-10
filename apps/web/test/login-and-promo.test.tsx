@@ -92,3 +92,31 @@ describe('<PromoForm />', () => {
     expect(calls).toHaveLength(0);
   });
 });
+
+describe('session cache', () => {
+  it('after login the live "me" observer sees the signed-in user (header would switch to "Sign out")', async () => {
+    const { useLogin, useMe } = await import('@/entities/session');
+    const { renderHook, act } = await import('@testing-library/react');
+    const { QueryClient, QueryClientProvider } = await import('@tanstack/react-query');
+    const React = await import('react');
+    let loggedIn = false;
+    mockFetch((url) =>
+      url.endsWith('/auth/login')
+        ? ((loggedIn = true), json(200, { id: '1', email: 'a@b.co', name: 'A', role: 'customer' }))
+        : loggedIn
+          ? json(200, { id: '1', email: 'a@b.co', name: 'A', role: 'customer' })
+          : json(401, { error: { code: 'unauthorized', message: 'x' } }),
+    );
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client }, children);
+    // two SEPARATE components, like the header and the login form: the header does not re-render because of the form
+    const header = renderHook(() => useMe(), { wrapper });
+    const form = renderHook(() => useLogin(), { wrapper });
+    await waitFor(() => expect(header.result.current.data).toBeNull());
+    await act(async () => {
+      await form.result.current.mutateAsync({ email: 'a@b.co', password: 'x' });
+    });
+    await waitFor(() => expect(header.result.current.data).toMatchObject({ email: 'a@b.co' }));
+  });
+});

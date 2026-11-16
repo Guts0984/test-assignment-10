@@ -99,3 +99,21 @@ Each block is **end to end**: code + its Dockerfile/compose service where releva
 ## 7. Open questions (I'll use defaults below unless you say otherwise)
 
 1. Package manager: **pnpm**. 2. Password hashing: **argon2** (fallback scrypt if native build is painful in Docker). 3. Delivery fee 100 ₴ = 10000 kop. 4. Login limits: 5 fails / 15 min per IP+account, 30 fails / 15 min per IP. 5. Auto-refresh of order status: TanStack Query polling every 2 s on pending orders (no websockets). 6. Seeded passwords documented in README (`manager@shop.test / Manager123!`, `customerN@shop.test / Customer123!`).
+
+
+---
+
+## Status (updated after implementation)
+
+Everything above was implemented; the final block layout (commits) is:
+
+1. `chore` monorepo skeleton, lint rules, `.env.example`, CI
+2. `feat(shared)` schemas, money, promo logic + property tests
+3. `feat(db)` schema, migrations, atomic primitives, seed, tests on real PostgreSQL
+4. `feat(api-core)` env.ts, Nest bootstrap, sessions, rate limiter, Swagger + adversarial tests
+5. `feat(api-shop)` catalogue, cart, promos, checkout, payments stub + webhook, returns, jobs, reports
+6. `feat(web)` Next.js app (FSD), uk/en, component tests
+7. `feat(nginx)` reverse proxy, edge limits, compose integration, smoke test
+8. `feat(e2e)` Playwright suite, README, CI stack job
+
+Deviations from this plan: no Redis (forbidden); nginx added as agreed; the DB commit came after `shared` because the seed uses the shared money functions.
