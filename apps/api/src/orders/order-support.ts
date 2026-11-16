@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { enqueueJob, schema, type Executor, type Tx } from '@shop/db';
 import { type OrderEventType, type RefundDto } from '@shop/shared';
 import { type AppCtx } from '../ctx';
@@ -43,6 +43,23 @@ export async function createRefund(
 ): Promise<string | null> {
   if (o.amount <= 0) return null;
   const now = ctx.clock.now();
+  // Books the refund against the order's own money - but never beyond what the order cost (the table
+  // has a CHECK for it). Whatever does not fit is EXTRA money paid for this order (a second payment):
+  // it is still sent back in full, just not counted in the order's refunded total.
+  let kind = o.kind;
+  if (kind !== 'duplicate_payment') {
+    const booked = await tx
+      .update(orders)
+      .set({ refundedTotal: sql`${orders.refundedTotal} + ${o.amount}` })
+      .where(
+        and(
+          eq(orders.id, o.order.id),
+          sql`${orders.refundedTotal} + ${o.amount} <= ${orders.total}`,
+        ),
+      )
+      .returning({ id: orders.id });
+    if (booked.length === 0) kind = 'duplicate_payment';
+  }
   const [refund] = await tx
     .insert(refunds)
     .values({
@@ -50,18 +67,12 @@ export async function createRefund(
       paymentId: o.paymentId,
       returnId: o.returnId ?? null,
       amount: o.amount,
-      kind: o.kind,
+      kind,
       status: 'pending',
       createdAt: now,
     })
     .returning({ id: refunds.id });
-  if (o.kind !== 'duplicate_payment') {
-    await tx
-      .update(orders)
-      .set({ refundedTotal: sql`${orders.refundedTotal} + ${o.amount}` })
-      .where(eq(orders.id, o.order.id));
-  }
-  await addEvent(tx, o.order.id, 'refund_requested', now, { amount: o.amount, kind: o.kind });
+  await addEvent(tx, o.order.id, 'refund_requested', now, { amount: o.amount, kind });
   await enqueueJob(tx, {
     type: 'deliver_webhook',
     runAt: now,

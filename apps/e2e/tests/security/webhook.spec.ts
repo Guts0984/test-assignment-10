@@ -8,6 +8,7 @@ import {
   makeOrder,
   managerApi,
   startPay,
+  waitOrder,
   stubComplete,
   sendWebhook,
   tag,
@@ -243,6 +244,37 @@ test.describe('what a valid notification may and may not do', () => {
     const o = await getOrder(W, order.id);
     expect(o.status).toBe('cancelled');
     expect(o.refunds.reduce((s, r) => s + r.amount, 0)).toBe(order.total); // never more than was paid
+  });
+
+  test('a SECOND payment for a cancelled, already refunded order is refunded too (it used to be a 500 and no refund)', async () => {
+    const { order, paymentId: first } = await pending();
+    expect((await stubComplete(first, 'failure')).status).toBeLessThan(300); // attempt 1 declined
+    const { paymentId: second } = await startPay(W, order.id); // the customer tries again
+    expect(second).not.toBe(first);
+    expect((await stubComplete(second, 'success')).status).toBeLessThan(300);
+    await waitOrder(W, order.id, (o) => o.status === 'paid');
+    expect(
+      (await (await api(W)).post(`/api/orders/${order.id}/cancel`, { data: {} })).status(),
+    ).toBe(200);
+    await waitOrder(
+      W,
+      order.id,
+      (o) => o.refunds.length > 0 && o.refunds.every((r) => r.status === 'succeeded'),
+    );
+
+    // the provider now reports attempt 1 as successful as well
+    const r = await sendWebhook(event('payment.succeeded', order, first));
+    expect(r.status, r.body).toBe(200);
+
+    await expect
+      .poll(async () => (await getOrder(W, order.id)).refunds.reduce((s, x) => s + x.amount, 0), {
+        timeout: 30_000,
+      })
+      .toBe(2 * order.total);
+    const o = await getOrder(W, order.id);
+    expect(o.status).toBe('cancelled');
+    expect(o.refunds.map((x) => x.kind).sort()).toEqual(['cancellation', 'duplicate_payment']);
+    expect(o.refundedTotal).toBe(order.total);
   });
 
   test('the stub page cannot be completed twice: the second click does not charge again', async () => {

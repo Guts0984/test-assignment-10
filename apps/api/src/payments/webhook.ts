@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { reserveStock, releaseStock, schema, type Tx } from '@shop/db';
 import { type WebhookEvent } from '@shop/shared';
 import { type AppCtx } from '../ctx';
@@ -104,6 +104,31 @@ async function applyPaymentSucceeded(
   }
 
   if (order.status === 'cancelled') {
+    // A cancelled order that already holds ANOTHER successful payment (the one the cancellation
+    // refunded, or an earlier late payment) has had its own money handled: this payment is extra
+    // money for the same order. It goes back in full, as a duplicate. (Booking it as a normal refund
+    // would push refunded_total above the order total - a CHECK violation, a 500 and no refund.)
+    const other = await tx
+      .select({ id: payments.id })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.orderId, order.id),
+          eq(payments.status, 'succeeded'),
+          ne(payments.id, payment.id),
+        ),
+      )
+      .limit(1);
+    if (other[0]) {
+      await createRefund(tx, ctx, {
+        order,
+        paymentId: payment.id,
+        amount: payment.amount,
+        kind: 'duplicate_payment',
+      });
+      await addEvent(tx, order.id, 'duplicate_payment_refunded', now, { amount: payment.amount });
+      return { status: 'processed', outcome: 'duplicate_refunded' };
+    }
     // customer cancelled on purpose: the money goes back, the order stays cancelled
     if (order.cancelReason !== 'expired') {
       await createRefund(tx, ctx, {
