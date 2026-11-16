@@ -45,8 +45,8 @@ services:
       API_HOST: 0.0.0.0
       # the stub posts its signed notifications back to this very container
       WEBHOOK_URL: http://127.0.0.1:${API_PORT:-4000}/payments/webhook
-    ports:
-      - '${API_HOST_PORT:-4000}:${API_PORT:-4000}'
+    expose:
+      - '${API_PORT:-4000}' # reachable only inside the compose network, the public entry is nginx
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,8 +67,8 @@ services:
     environment:
       PORT: ${WEB_PORT:-3000}
       HOSTNAME: 0.0.0.0
-    ports:
-      - '${WEB_HOST_PORT:-3000}:${WEB_PORT:-3000}'
+    expose:
+      - '${WEB_PORT:-3000}' # reachable only inside the compose network, the public entry is nginx
     depends_on:
       api:
         condition: service_healthy

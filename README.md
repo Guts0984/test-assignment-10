@@ -26,11 +26,9 @@ That is the only manual step: migrations and the seed run automatically when the
 | -------------------------- | --------------------------------------------------- |
 | http://localhost:8088      | the shop (nginx -> web / api)                       |
 | http://localhost:8088/docs | Swagger UI (also `/docs-json`)                      |
-| http://localhost:3000      | web directly (its `/api/*` rewrite goes to the api) |
-| http://localhost:4000      | api directly                                        |
 | `localhost:5433`           | PostgreSQL (`POSTGRES_HOST_PORT`)                   |
 
-Ports are configurable in `.env` (`NGINX_HOST_PORT`, `WEB_HOST_PORT`, `API_HOST_PORT`, `POSTGRES_HOST_PORT`).
+The web (3000) and api (4000) containers are **not** published to the host: nginx is the only entry point, so every request passes its rate limits, body-size cap and header overwrite (`/api/*` goes to the api, everything else to the web). Ports are configurable in `.env` (`NGINX_HOST_PORT`, `POSTGRES_HOST_PORT`).
 
 **Demo logins** (created by the seed; passwords come from `.env`):
 
