@@ -2,7 +2,8 @@ packages:
   - apps/*
   - packages/*
 
-# esbuild (drizzle-kit, tsx, vite) ships its binary as an optional dependency; the postinstall
-# script is only an optimisation, so builds are allowed explicitly.
+# Postinstall scripts are opt-in. esbuild (drizzle-kit, tsx, vite) ships its binary as an optional
+# dependency, so its script is only an optimisation; scarf is swagger-ui's analytics ping.
 allowBuilds:
   esbuild: true
+  '@scarf/scarf': false
