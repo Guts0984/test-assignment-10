@@ -20,7 +20,7 @@ function StockEditor({ product }: { product: ProductDto }) {
       onSubmit={(e) => {
         e.preventDefault();
         if (valid && Number(value) !== product.stock)
-          update.mutate({ id: product.id, body: { stock: Number(value) } });
+          update.mutate({ id: product.id, body: { stockDelta: Number(value) - product.stock } });
       }}
     >
       <Input

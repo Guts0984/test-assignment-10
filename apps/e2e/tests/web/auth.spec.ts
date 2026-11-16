@@ -130,6 +130,8 @@ test.describe('where you land after signing in', () => {
       await password(page).fill(customer(12).password);
       await signIn(page).click();
       await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+      // "Sign out" appears while the redirect is still running: wait until the login page is left
+      await expect(page).not.toHaveURL(/\/login/);
       const url = new URL(page.url());
       expect(url.origin).toBe(new URL(BASE).origin);
       expect(url.pathname).not.toMatch(/\/login\/?$/); // not bounced back into the login page either

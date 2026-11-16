@@ -21,6 +21,40 @@ const CLIENT_CAUSED_PG_CODES = new Set([
   '22P05',
 ]);
 
+const UNAVAILABLE_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'EPIPE',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  '57P01',
+  '57P02',
+  '57P03', // admin shutdown, crash shutdown, cannot connect now (starting up)
+  '08000',
+  '08001',
+  '08003',
+  '08004',
+  '08006', // connection exceptions
+]);
+const UNAVAILABLE_MESSAGE =
+  /connection terminated|timeout exceeded when trying to connect|connection error|database system is (?:starting up|shutting down)|cannot use a pool after calling end|ECONNREFUSED/i;
+
+/**
+ * The database cannot be reached (down, restarting, pool exhausted): that is "try again in a moment"
+ * (503 + Retry-After), not "the server is broken" (500) - clients, load balancers and the UI treat
+ * the two very differently.
+ */
+export function isDatabaseUnavailable(e: unknown): boolean {
+  for (let cur: unknown = e, i = 0; cur && typeof cur === 'object' && i < 5; i++) {
+    const { code, message } = cur as { code?: unknown; message?: unknown };
+    if (typeof code === 'string' && UNAVAILABLE_CODES.has(code)) return true;
+    if (typeof message === 'string' && UNAVAILABLE_MESSAGE.test(message)) return true;
+    cur = (cur as { cause?: unknown }).cause;
+  }
+  return false;
+}
+
 export function pgErrorCode(e: unknown): string | undefined {
   for (let cur: unknown = e, i = 0; cur && typeof cur === 'object' && i < 4; i++) {
     const code = (cur as { code?: unknown }).code;
@@ -70,6 +104,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = 400;
       code = 'validation_error';
       message = 'Invalid request';
+    } else if (isDatabaseUnavailable(exception)) {
+      status = 503;
+      code = 'service_unavailable';
+      message = 'The service is temporarily unavailable. Please try again in a moment.';
+      headers = { 'Retry-After': '2' };
     } else {
       const e = exception as ErrorLike | null;
       const s = Number(e?.status ?? e?.statusCode);

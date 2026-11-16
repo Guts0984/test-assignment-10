@@ -8,7 +8,12 @@ import { isApiError } from '@/shared/api/client';
 import { toMoneyInput } from '@/shared/lib/format';
 import { Alert, Button, Field, Input } from '@/shared/ui';
 import { Select } from '@/shared/ui/input';
-import { productFormSchema, toProductPayload, type ProductFormValues } from '../model/schema';
+import {
+  productFormSchema,
+  toProductChanges,
+  toProductPayload,
+  type ProductFormValues,
+} from '../model/schema';
 
 export function ProductForm({ product, onDone }: { product?: ProductDto; onDone: () => void }) {
   const t = useTranslations('manager.products');
@@ -42,9 +47,11 @@ export function ProductForm({ product, onDone }: { product?: ProductDto; onDone:
       className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2"
       aria-label={product ? t('editing') : t('creating')}
       onSubmit={handleSubmit((v) => {
-        const body = toProductPayload(v);
-        if (product) update.mutate({ id: product.id, body }, { onSuccess: onDone });
-        else create.mutate(body, { onSuccess: onDone });
+        if (product) {
+          const body = toProductChanges(v, product);
+          if (Object.keys(body).length === 0) return onDone(); // nothing changed: nothing to send
+          update.mutate({ id: product.id, body }, { onSuccess: onDone });
+        } else create.mutate(toProductPayload(v), { onSuccess: onDone });
       })}
     >
       <h2 className="font-semibold sm:col-span-2">{product ? t('editing') : t('creating')}</h2>

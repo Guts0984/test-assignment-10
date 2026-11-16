@@ -37,7 +37,7 @@ The web (3000) and api (4000) containers are **not** published to the host: ngin
 | manager  | `manager@shop.test`                            | `Manager123!`  |
 | customer | `customer1@shop.test` … `customer50@shop.test` | `Customer123!` |
 
-Seeded promo codes: `WELCOME10` (10 %, once per customer), `BIG7` (7 %, min 3 000 ₴), `SAVE500` (500 ₴, min 4 000 ₴), `ONLYONE` (15 %, total limit 1 - handy to try the "two buyers, one discount" race), `EXPIRED5` (expired), `NEXTYEAR` (not started).
+Seeded promo codes: `WELCOME10` (10 %, once per customer; the history never redeems it for `customer1` … `customer10`, so use one of those to try it - the other demo customers have already used it), `BIG7` (7 %, min 3 000 ₴), `SAVE500` (500 ₴, min 4 000 ₴), `ONLYONE` (15 %, total limit 1 - handy to try the "two buyers, one discount" race), `EXPIRED5` (expired), `NEXTYEAR` (not started).
 
 ### Tests
 

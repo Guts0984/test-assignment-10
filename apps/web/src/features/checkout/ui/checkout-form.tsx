@@ -40,9 +40,17 @@ export function CheckoutForm({
   const locale = useLocale() as Locale;
   const create = useCreateOrder();
   const accept = useAcceptPrices();
-  // ONE key per checkout screen: a double click or a retry after a dropped connection re-sends it,
-  // and the server answers with the order that already exists.
-  const idempotencyKey = useRef(crypto.randomUUID());
+  // One key per DISTINCT request: a double click or a retry after a dropped connection re-sends the
+  // same body with the same key (the server answers with the order that already exists), but if the
+  // customer changed anything meanwhile (delivery, address, total) it is a new request and gets a
+  // new key - otherwise the server would rightly refuse it as a different request under an old key.
+  const attempt = useRef<{ fingerprint: string; key: string } | null>(null);
+  const keyFor = (body: unknown): string => {
+    const fingerprint = JSON.stringify(body);
+    if (attempt.current?.fingerprint !== fingerprint)
+      attempt.current = { fingerprint, key: crypto.randomUUID() };
+    return attempt.current.key;
+  };
 
   const {
     register,
@@ -58,10 +66,8 @@ export function CheckoutForm({
 
   const submit = (v: CheckoutFormValues) => {
     if (create.isPending) return;
-    create.mutate(
-      { body: toOrderCreate(v, totals.total), key: idempotencyKey.current },
-      { onSuccess: onCreated },
-    );
+    const body = toOrderCreate(v, totals.total);
+    create.mutate({ body, key: keyFor(body) }, { onSuccess: onCreated });
   };
 
   const err = create.error;
@@ -78,6 +84,8 @@ export function CheckoutForm({
     'promo_rejected',
     'cart_empty',
     'conflict',
+    'idempotency_conflict',
+    'order_too_large',
     'validation_error',
   ];
 

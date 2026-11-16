@@ -45,6 +45,7 @@ const STATUS_CODES: Record<number, ErrorCode> = {
   415: 'validation_error',
   422: 'validation_error',
   429: 'rate_limited',
+  503: 'service_unavailable',
 };
 
 export function codeForStatus(status: number): ErrorCode {

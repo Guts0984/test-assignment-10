@@ -91,6 +91,42 @@ try {
   );
 }
 
+// ------------------------------------------- no way around the edge (other spellings of /api)
+{
+  const spellings = [
+    '/API/health',
+    '/Api/health',
+    '/aPi/health',
+    '/API/./health',
+    '/API/x.y',
+    '/api',
+    '/API',
+    '/API/auth/login',
+  ];
+  const results = [];
+  for (const p of spellings) {
+    const r = await get(
+      p,
+      p.endsWith('login')
+        ? {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', origin: BASE },
+            body: '{}',
+          }
+        : undefined,
+    );
+    results.push([p, r.status, r.body.includes('"status":"ok"') || r.body.includes('"error"')]);
+  }
+  // plain "/api" is redirected by nginx itself (301) to "/api/", which is the rate-limited location: no bypass
+  const ok = ([p, st, reachedApi]) =>
+    !reachedApi && (p === '/api' ? st === 301 || st === 404 : st === 404);
+  check(
+    'other spellings of /api (/API/..., /Api/..., /API/./x, /API/x.y) are 404 and never reach the api around the limits',
+    results.every(ok),
+    results.map(([p, st]) => `${p}=${st}`).join(' '),
+  );
+}
+
 // -------------------------------------------------------------------------------------- headers
 {
   const need = (h) =>

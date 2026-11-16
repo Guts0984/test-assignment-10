@@ -54,6 +54,8 @@ function useOrderMutation<V>(id: string, fn: (v: V) => Promise<OrderDto>) {
       qc.setQueryData(orderKey(id), order);
       void qc.invalidateQueries({ queryKey: ['orders'] });
     },
+    // a refused action (409: "it shipped meanwhile") means the screen is out of date: show the real state
+    onError: () => void qc.invalidateQueries({ queryKey: orderKey(id) }),
   });
 }
 

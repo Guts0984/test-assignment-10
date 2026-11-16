@@ -2,6 +2,7 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useCancelOrder } from '@/entities/order';
+import { isApiError } from '@/shared/api/client';
 import { Alert, Button } from '@/shared/ui';
 
 /** Two-step cancel (button -> inline confirmation): no accidental cancellations, no browser dialogs. */
@@ -21,13 +22,20 @@ export function CancelButton({ orderId }: { orderId: string }) {
   return (
     <Alert tone="warning" className="grid gap-3">
       <p>{t('confirmCancel')}</p>
-      {cancel.isError ? <p className="text-destructive">{tc('error')}</p> : null}
+      {cancel.isError ? (
+        <p className="text-destructive">
+          {isApiError(cancel.error) && cancel.error.status === 409
+            ? t('cancelRefused')
+            : tc('error')}
+        </p>
+      ) : null}
       <div className="flex gap-2">
         <Button
           variant="destructive"
           size="sm"
           disabled={cancel.isPending}
-          onClick={() => cancel.mutate(undefined, { onSettled: () => setConfirming(false) })}
+          // close the panel only on success: on a failure it stays, with the reason
+          onClick={() => cancel.mutate(undefined, { onSuccess: () => setConfirming(false) })}
         >
           {t('confirmCancelYes')}
         </Button>

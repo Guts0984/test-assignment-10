@@ -130,6 +130,17 @@ describe('seed matches the assignment', () => {
     ).toEqual({ bad: 0 });
   });
 
+  it('the README demo promo works: customer1..customer10 have NOT redeemed WELCOME10, the others have', async () => {
+    const used = (cond: string) =>
+      one<{ n: number }>(
+        sql.raw(`SELECT count(DISTINCT u.id)::int n FROM promo_redemptions r
+          JOIN promo_codes p ON p.id = r.promo_id AND p.code = 'WELCOME10'
+          JOIN users u ON u.id = r.user_id WHERE ${cond}`),
+      );
+    expect(await used(`u.email ~ '^customer([1-9]|10)@'`)).toEqual({ n: 0 });
+    expect((await used(`u.email !~ '^customer([1-9]|10)@'`)).n).toBeGreaterThan(20);
+  });
+
   it('returned quantities match return records; delivered orders only are returned', async () => {
     expect(
       await one(

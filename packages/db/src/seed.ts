@@ -366,13 +366,17 @@ export async function seedDatabase(db: Db, opts: SeedOptions): Promise<SeedSumma
     });
     if (chance(0.15)) {
       const cand = pick(historicalPromos);
+      // customer1..customer10 are the demo accounts of the README: they must still be able to try
+      // WELCOME10 (once per customer), so the generated history never redeems it for them
+      const keepsWelcome =
+        cand.code === 'WELCOME10' && /^customer(?:[1-9]|10)@/.test(customer.email);
       const rec: PromoRecord = { ...cand, used: 0, maxUses: cand.maxUses ?? null };
       const check = validatePromo(rec, {
         now: createdAt,
         subtotal: totals.subtotal,
         customerAlreadyUsed: usedByUser.get(cand.id)?.has(customer.id) ?? false,
       });
-      if (check.ok) {
+      if (check.ok && !keepsWelcome) {
         promo = cand;
         totals = calcTotals({
           lines: lines.map((l) => ({ unitPrice: l.p.price, qty: l.qty })),

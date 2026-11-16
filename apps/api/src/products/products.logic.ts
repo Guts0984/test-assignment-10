@@ -9,7 +9,7 @@ import {
 } from '@shop/shared';
 import { type AppCtx } from '../ctx';
 import { decodeCursor, encodeCursor, UUID_RE } from '../http/cursor';
-import { notFound, unprocessable } from '../http/errors';
+import { conflict, notFound, unprocessable } from '../http/errors';
 
 const { products, categories } = schema;
 
@@ -171,12 +171,35 @@ export async function updateProduct(
   input: ProductUpdate,
 ): Promise<ProductDto> {
   if (input.categoryId) await assertCategory(ctx, input.categoryId);
+  const { stockDelta, ...fields } = input;
+  const set: Record<string, unknown> = { ...fields };
+  // a relative change is computed by the database from the CURRENT stock (never from what the
+  // manager's screen showed minutes ago), and may not leave 0..1 000 000
+  if (stockDelta !== undefined) set.stock = sql`${products.stock} + ${stockDelta}`;
   const rows = await ctx.db
     .update(products)
-    .set(input)
-    .where(eq(products.id, id))
+    .set(set)
+    .where(
+      and(
+        eq(products.id, id),
+        stockDelta === undefined
+          ? undefined
+          : sql`${products.stock} + ${stockDelta} BETWEEN 0 AND 1000000`,
+      ),
+    )
     .returning({ id: products.id });
-  if (!rows[0]) throw notFound('Product not found');
+  if (!rows[0]) {
+    const exists = await ctx.db
+      .select({ id: products.id })
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+    if (!exists[0]) throw notFound('Product not found');
+    throw conflict(
+      'conflict',
+      'The stock changed in the meantime: this change would take it below 0 (or above the limit). Reload and try again.',
+    );
+  }
   return getProduct(ctx, id, { canSeeInactive: true });
 }
 

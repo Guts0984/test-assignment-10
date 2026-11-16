@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import {
   enqueueJob,
   nextOrderNumber,
@@ -8,7 +8,7 @@ import {
   schema,
   type Tx,
 } from '@shop/db';
-import { calcTotals, type OrderCreate, type OrderDto } from '@shop/shared';
+import { calcTotals, MAX_ORDER_TOTAL_KOPECKS, type OrderCreate, type OrderDto } from '@shop/shared';
 import { moneyConfig, type AppCtx } from '../ctx';
 import { AppError, conflict, unprocessable } from '../http/errors';
 import { loadCartRows } from '../cart/cart.logic';
@@ -34,6 +34,36 @@ const { orders, orderItems, cartItems, carts } = schema;
  *   6. insert order + lines + event + expiry job, empty the cart
  * Any failure rolls everything back: stock, promo use AND the order number.
  */
+/** Key order so two spellings of the same address compare equal. */
+const canonical = (v: unknown): string =>
+  JSON.stringify(v ?? null, (_k, x) =>
+    x && typeof x === 'object' && !Array.isArray(x)
+      ? Object.fromEntries(
+          Object.entries(x as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)),
+        )
+      : x,
+  );
+
+/**
+ * An Idempotency-Key means "this exact request". Sending the same key with DIFFERENT details
+ * (another delivery method or address) is a client bug or a retry of something else: it must not
+ * silently hand back the first order - the customer would believe the new details were saved.
+ */
+function assertSameRequest(
+  row: { deliveryMethod: 'pickup' | 'courier'; address: unknown },
+  input: OrderCreate,
+): void {
+  const same =
+    row.deliveryMethod === input.deliveryMethod &&
+    (input.deliveryMethod === 'pickup' || canonical(row.address) === canonical(input.address));
+  if (!same) {
+    throw conflict(
+      'idempotency_conflict',
+      'This Idempotency-Key was already used for an order with different details',
+    );
+  }
+}
+
 export async function createOrder(
   ctx: AppCtx,
   userId: string,
@@ -49,12 +79,14 @@ export async function createOrder(
     // belt and braces: if a concurrent twin still slipped to the unique index, return its order
     if (pgErrorCode(e) === '23505' && pgConstraint(e) === 'orders_user_idem_uq') {
       const existing = await ctx.db
-        .select({ id: orders.id })
+        .select({ id: orders.id, deliveryMethod: orders.deliveryMethod, address: orders.address })
         .from(orders)
         .where(and(eq(orders.userId, userId), eq(orders.idempotencyKey, idempotencyKey)))
         .limit(1);
-      if (existing[0])
+      if (existing[0]) {
+        assertSameRequest(existing[0], input);
         return { order: await loadOrderDto(ctx.db, ctx, existing[0].id), created: false };
+      }
     }
     throw e;
   }
@@ -68,13 +100,20 @@ async function placeOrder(
   key: string,
 ): Promise<{ orderId: string; created: boolean }> {
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${'checkout:' + userId}, 0))`);
+  // Cart edits take their own lock. Without holding it here, a line added from another device while
+  // this checkout runs landed after the cart was read and was then deleted without being ordered.
+  // Always in this order (checkout, then cart); cart edits only ever take the cart lock: no deadlock.
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${'cart:' + userId}, 0))`);
 
   const existing = await tx
-    .select({ id: orders.id })
+    .select({ id: orders.id, deliveryMethod: orders.deliveryMethod, address: orders.address })
     .from(orders)
     .where(and(eq(orders.userId, userId), eq(orders.idempotencyKey, key)))
     .limit(1);
-  if (existing[0]) return { orderId: existing[0].id, created: false };
+  if (existing[0]) {
+    assertSameRequest(existing[0], input);
+    return { orderId: existing[0].id, created: false };
+  }
 
   const now = ctx.clock.now();
   const pending = await tx.execute<{ n: number }>(
@@ -152,6 +191,13 @@ async function placeOrder(
     deliveryMethod: input.deliveryMethod,
     config: moneyConfig(ctx.env),
   });
+  if (totals.subtotal > MAX_ORDER_TOTAL_KOPECKS || totals.total > MAX_ORDER_TOTAL_KOPECKS) {
+    throw unprocessable(
+      'order_too_large',
+      `The order is above the maximum amount (${MAX_ORDER_TOTAL_KOPECKS / 100} UAH). Reduce the quantities or split the order.`,
+      { max: MAX_ORDER_TOTAL_KOPECKS },
+    );
+  }
   if (totals.total <= 0) {
     // a payment of 0 cannot exist; refusing keeps every order payable and every refund meaningful
     throw unprocessable('validation_error', 'The order total must be greater than zero', [
@@ -209,7 +255,16 @@ async function placeOrder(
     reservedUntil: reservedUntil.toISOString(),
   });
   await enqueueJob(tx, { type: 'expire_order', payload: { orderId }, runAt: reservedUntil });
-  await tx.delete(cartItems).where(eq(cartItems.userId, userId));
+  // only what was ordered leaves the cart (belt and braces next to the lock above)
+  await tx.delete(cartItems).where(
+    and(
+      eq(cartItems.userId, userId),
+      inArray(
+        cartItems.productId,
+        cart.map((r) => r.productId),
+      ),
+    ),
+  );
   await tx.update(carts).set({ promoCode: null, updatedAt: now }).where(eq(carts.userId, userId));
   return { orderId, created: true };
 }

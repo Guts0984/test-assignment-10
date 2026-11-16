@@ -11,7 +11,10 @@ const config: NextConfig = {
   transpilePackages: ['@shop/shared'],
   poweredByHeader: false,
   async rewrites() {
-    // Fallback when nginx is not in front: the browser always calls same-origin /api/*
+    // ONLY for running the web app without nginx (`next dev`). In production nginx owns /api: this
+    // rewrite matches case-insensitively and would let /API/... reach the api around nginx's rate
+    // limits (and be counted under the web container's address). Opt in with ENABLE_API_REWRITE=1.
+    if (process.env.NODE_ENV === 'production' && process.env.ENABLE_API_REWRITE !== '1') return [];
     return [
       {
         source: '/api/:path*',

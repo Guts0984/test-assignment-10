@@ -41,11 +41,26 @@ export const productUpdateSchema = z
     name: productCreateSchema.shape.name,
     categoryId: productCreateSchema.shape.categoryId,
     price: productCreateSchema.shape.price,
+    /** exact count (an inventory recount): it OVERWRITES whatever reservations did since it was read */
     stock: productCreateSchema.shape.stock,
+    /**
+     * "+5 / -2 pieces": applied to the CURRENT stock inside the database, so reservations and
+     * cancellations that happen while the manager edits are not lost. This is what the UI sends.
+     */
+    stockDelta: z
+      .number()
+      .int()
+      .min(-1_000_000)
+      .max(1_000_000)
+      .refine((n) => n !== 0, { message: 'must not be 0' }),
     active: z.boolean(),
   })
   .partial()
-  .refine((v) => Object.keys(v).length > 0, { message: 'at least one field is required' });
+  .refine((v) => Object.keys(v).length > 0, { message: 'at least one field is required' })
+  .refine((v) => v.stock === undefined || v.stockDelta === undefined, {
+    message: 'send either stock or stockDelta, not both',
+    path: ['stockDelta'],
+  });
 export type ProductUpdate = z.infer<typeof productUpdateSchema>;
 
 export const productDtoSchema = z.object({

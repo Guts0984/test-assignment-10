@@ -72,6 +72,14 @@ export const ERROR_CODES = [
   'rate_limited',
   'bad_signature',
   'payload_too_large',
+  'order_too_large',
+  'service_unavailable',
   'internal_error',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
+
+/**
+ * Order amounts are stored as 32-bit integers (kopecks): the largest possible is 2 147 483 647.
+ * Above this limit (₴ 20 000 000) checkout says so clearly instead of failing deep in the database.
+ */
+export const MAX_ORDER_TOTAL_KOPECKS = 2_000_000_000;
