@@ -249,6 +249,8 @@ export const orderEvents = pgTable(
   'order_events',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    /** insertion order: timestamps can tie (same millisecond), the history must still read in the order things happened */
+    seq: bigserial('seq', { mode: 'number' }).notNull(),
     orderId: uuid('order_id')
       .notNull()
       .references(() => orders.id, { onDelete: 'cascade' }),
@@ -258,7 +260,7 @@ export const orderEvents = pgTable(
       .default(sql`'{}'::jsonb`),
     createdAt: ts('created_at').notNull().defaultNow(),
   },
-  (t) => [index('order_events_order_idx').on(t.orderId, t.createdAt)],
+  (t) => [index('order_events_order_idx').on(t.orderId, t.seq)],
 );
 
 export const promoRedemptions = pgTable(
@@ -348,6 +350,8 @@ export const refunds = pgTable(
   'refunds',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    /** insertion order, for a stable history when timestamps tie */
+    seq: bigserial('seq', { mode: 'number' }).notNull(),
     orderId: uuid('order_id')
       .notNull()
       .references(() => orders.id, { onDelete: 'cascade' }),

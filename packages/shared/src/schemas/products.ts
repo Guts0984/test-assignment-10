@@ -34,7 +34,16 @@ export const productCreateSchema = z.object({
 });
 export type ProductCreate = z.infer<typeof productCreateSchema>;
 
-export const productUpdateSchema = productCreateSchema
+// NOT productCreateSchema.partial(): the create schema's `active` default would survive .partial()
+// and silently re-activate a hidden product on every unrelated PATCH.
+export const productUpdateSchema = z
+  .object({
+    name: productCreateSchema.shape.name,
+    categoryId: productCreateSchema.shape.categoryId,
+    price: productCreateSchema.shape.price,
+    stock: productCreateSchema.shape.stock,
+    active: z.boolean(),
+  })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'at least one field is required' });
 export type ProductUpdate = z.infer<typeof productUpdateSchema>;

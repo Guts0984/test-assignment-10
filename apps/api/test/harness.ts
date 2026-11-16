@@ -52,6 +52,7 @@ export async function startTestApp(
     ...TEST_SECRETS,
     API_PORT: String(port),
     JOBS_ENABLED: 'false',
+    WEBHOOK_URL: `http://127.0.0.1:${port}/payments/webhook`,
     ALLOWED_ORIGINS: 'http://shop.test',
     PUBLIC_WEB_URL: 'http://shop.test',
     ...opts.env,

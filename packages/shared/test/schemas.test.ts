@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   loginSchema,
+  productUpdateSchema,
   orderCreateSchema,
   payBodySchema,
   productQuerySchema,
@@ -44,6 +45,11 @@ describe('schemas reject hostile input', () => {
     expect(productQuerySchema.safeParse({ minPrice: 'abc' }).success).toBe(false);
     expect(productQuerySchema.safeParse({ sort: 'price; drop table' }).success).toBe(false);
     expect(productQuerySchema.parse({}).limit).toBe(24);
+  });
+  it('product PATCH never fills in defaults (would re-activate hidden products)', () => {
+    expect(productUpdateSchema.safeParse({}).success).toBe(false);
+    expect(productUpdateSchema.parse({ price: 5 })).toEqual({ price: 5 });
+    expect(productUpdateSchema.parse({ active: false })).toEqual({ active: false });
   });
   it('promo: percent over 100 and inverted dates are rejected', () => {
     expect(promoCreateSchema.safeParse({ code: 'ABC', type: 'percent', value: 101 }).success).toBe(

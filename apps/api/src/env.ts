@@ -34,6 +34,8 @@ const shape = {
   // --- business rules
   RESERVATION_MINUTES: int(15, 1),
   RETURN_WINDOW_DAYS: int(14, 1),
+  // stops one customer from hoarding the whole stock with unpaid reservations
+  MAX_PENDING_ORDERS: int(5, 1),
   DELIVERY_FEE_KOPECKS: int(10_000),
   FREE_DELIVERY_FROM_KOPECKS: int(200_000),
 
