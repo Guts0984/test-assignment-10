@@ -11,7 +11,15 @@ type ErrorLike = { status?: unknown; statusCode?: unknown; type?: unknown; messa
  *   22001 string too long   22003 number out of range   22007/22008 bad date or time
  *   22021 bad byte sequence (NUL)   22P02 bad text representation   22P05 untranslatable character
  */
-const CLIENT_CAUSED_PG_CODES = new Set(['22001', '22003', '22007', '22008', '22021', '22P02', '22P05']);
+const CLIENT_CAUSED_PG_CODES = new Set([
+  '22001',
+  '22003',
+  '22007',
+  '22008',
+  '22021',
+  '22P02',
+  '22P05',
+]);
 
 export function pgErrorCode(e: unknown): string | undefined {
   for (let cur: unknown = e, i = 0; cur && typeof cur === 'object' && i < 4; i++) {
