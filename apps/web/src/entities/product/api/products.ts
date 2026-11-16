@@ -1,6 +1,6 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { Page, ProductDto, ProductSort } from '@shop/shared';
-import { apiFetch } from '@/shared/api/client';
+import { apiFetch, isApiError } from '@/shared/api/client';
 import { toQueryString } from '@/shared/lib/query-string';
 
 export type ProductFilters = {
@@ -36,5 +36,15 @@ export function useCategories() {
     queryKey: ['categories'],
     queryFn: () => apiFetch<Category[]>('/categories'),
     staleTime: 5 * 60_000,
+  });
+}
+
+export const productKey = (id: string) => ['product', id] as const;
+
+export function useProduct(id: string) {
+  return useQuery({
+    queryKey: productKey(id),
+    queryFn: () => apiFetch<ProductDto>(`/products/${encodeURIComponent(id)}`),
+    retry: (count, err) => !(isApiError(err) && err.status >= 400 && err.status < 500) && count < 2,
   });
 }

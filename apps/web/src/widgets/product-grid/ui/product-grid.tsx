@@ -5,6 +5,7 @@ import { StockLabel, useProducts } from '@/entities/product';
 import { AddToCartButton } from '@/features/add-to-cart';
 import { catalogToApiFilters, parseCatalogParams } from '@/features/catalog-filters';
 import type { Locale } from '@/shared/config/locales';
+import { Link } from '@/shared/i18n/navigation';
 import { formatMoney } from '@/shared/lib/format';
 import { Alert, Button, Card, CardContent, Skeleton } from '@/shared/ui';
 
@@ -48,13 +49,23 @@ export function ProductGrid() {
       >
         {items.map((p) => (
           <li key={p.id}>
-            <Card className="flex h-full flex-col" data-testid="product-card">
+            <Card
+              className="relative flex h-full flex-col hover:bg-accent/40"
+              data-testid="product-card"
+            >
               <CardContent className="flex flex-1 flex-col gap-2 pt-4 sm:pt-6">
                 <p className="text-xs text-muted-foreground">{p.categoryName}</p>
-                <h3 className="font-medium leading-snug">{p.name}</h3>
+                <h3 className="font-medium leading-snug">
+                  <Link
+                    href={`/products/${p.id}`}
+                    className="after:absolute after:inset-0 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {p.name}
+                  </Link>
+                </h3>
                 <p className="text-lg font-semibold">{formatMoney(p.price, locale)}</p>
                 <StockLabel stock={p.stock} />
-                <div className="mt-auto pt-2">
+                <div className="relative z-10 mt-auto pt-2">
                   <AddToCartButton product={p} />
                 </div>
               </CardContent>

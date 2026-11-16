@@ -93,12 +93,16 @@
     "reset": "Reset filters",
     "addToCart": "Add to cart",
     "added": "Added",
-    "inStock": "{count, plural, one {# item in stock} other {# items in stock}}",
+    "inStock": "In stock",
     "lowStock": "Only {count} left",
     "outOfStock": "Out of stock",
     "noResults": "Nothing found. Try changing the filters.",
     "invalidPrice": "Enter an amount like 12.50",
-    "results": "Products"
+    "results": "Products",
+    "backToCatalog": "Back to catalog",
+    "productNotFound": "Product not found",
+    "categoryLabel": "Category",
+    "hiddenNotice": "This product is hidden from customers"
   },
   "cart": {
     "title": "Your cart",
