@@ -43,10 +43,13 @@ export async function createRefund(
 ): Promise<string | null> {
   if (o.amount <= 0) return null;
   const now = ctx.clock.now();
-  // Books the refund against the order's own money - but never beyond what the order cost (the table
-  // has a CHECK for it). Whatever does not fit is EXTRA money paid for this order (a second payment):
-  // it is still sent back in full, just not counted in the order's refunded total.
-  let kind = o.kind;
+  // Books the refund against the order's own money - and refuses to go beyond what the order cost
+  // (the table has a CHECK for the same invariant). A refund that does not fit is a CALCULATION BUG
+  // in the caller; paying it out anyway would send money away under a wrong label, so it fails loudly:
+  // the whole transaction rolls back, no refund row and no refund job are created.
+  // The one legitimate "extra money" case - a second payment for the same order - is classified by
+  // its caller (the payment webhook) and arrives here as `duplicate_payment`, which is not booked.
+  const kind = o.kind;
   if (kind !== 'duplicate_payment') {
     const booked = await tx
       .update(orders)
@@ -58,7 +61,10 @@ export async function createRefund(
         ),
       )
       .returning({ id: orders.id });
-    if (booked.length === 0) kind = 'duplicate_payment';
+    if (booked.length === 0)
+      throw new Error(
+        `refund of ${o.amount} (${kind}) exceeds what is left to refund on order ${o.order.id}`,
+      );
   }
   const [refund] = await tx
     .insert(refunds)

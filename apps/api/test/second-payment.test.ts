@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tests assert on loosely typed JSON responses */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createRefund } from '../src/orders/order-support';
 import { schema } from '@shop/db';
 import { startTestApp, type TestApp } from './harness';
 import {
@@ -146,12 +147,11 @@ describe('a SECOND payment for an order that was already cancelled and refunded'
     expect(after.refundedTotal).toBe(0);
   });
 
-  it('safety net: whatever the path, a refund can never push refunded_total above the total (it is booked as an extra-money refund instead)', async () => {
+  it("a payment row added behind the API's back is still refunded as a duplicate (the webhook classifies it, not the booking code)", async () => {
     const o = await newOrder();
     const first = await startPay(c, o.id);
     await stubClick(app, first, 'success');
     await c.post(`/orders/${o.id}/cancel`, {});
-    // a payment row the normal API cannot create any more (the order is cancelled): add it directly
     const [extra] = await app.tdb.db
       .insert(schema.payments)
       .values({ orderId: o.id, amount: o.total, status: 'pending' })
@@ -162,5 +162,81 @@ describe('a SECOND payment for an order that was already cancelled and refunded'
     const after = await getOrder(c, o.id);
     expect(sum(after.refunds)).toBe(2 * o.total);
     expect(after.refundedTotal).toBe(o.total);
+  });
+});
+
+describe('createRefund refuses a refund that does not fit (a calculation bug must fail, not pay out)', () => {
+  const counts = async () => ({
+    refunds: (await app.tdb.db.select().from(schema.refunds)).length,
+    jobs: (await app.tdb.db.select().from(schema.jobs)).filter((j) => j.type === 'deliver_webhook')
+      .length,
+  });
+
+  it('a "return" larger than what is left throws; no refund row, no refund job, refunded_total unchanged', async () => {
+    const o = await newOrder(5_000);
+    const paymentId = await startPay(c, o.id);
+    await stubClick(app, paymentId, 'success');
+    await drainJobs(app);
+    const before = await counts();
+    const row = (await app.tdb.db.query.orders.findFirst({
+      where: (x, { eq }) => eq(x.id, o.id),
+    }))!;
+
+    await expect(
+      app.tdb.db.transaction((tx) =>
+        createRefund(tx, app.ctx, { order: row, paymentId, amount: 6_000, kind: 'return' }),
+      ),
+    ).rejects.toThrow(/exceeds what is left to refund/);
+
+    expect(await counts()).toEqual(before);
+    expect((await getOrder(c, o.id)).refundedTotal).toBe(0);
+  });
+
+  it('after a full cancellation refund even 1 kopeck more is refused - and the failed attempt leaves the real refund untouched', async () => {
+    const o = await newOrder(5_000);
+    const paymentId = await startPay(c, o.id);
+    await stubClick(app, paymentId, 'success');
+    await c.post(`/orders/${o.id}/cancel`, {});
+    await drainJobs(app);
+    const before = await counts();
+    const row = (await app.tdb.db.query.orders.findFirst({
+      where: (x, { eq }) => eq(x.id, o.id),
+    }))!;
+    expect(row.refundedTotal).toBe(5_000);
+
+    for (const kind of ['return', 'cancellation', 'late_payment'] as const) {
+      await expect(
+        app.tdb.db.transaction((tx) =>
+          createRefund(tx, app.ctx, { order: row, paymentId, amount: 1, kind }),
+        ),
+      ).rejects.toThrow(/exceeds/);
+    }
+    expect(await counts()).toEqual(before);
+    const after = await getOrder(c, o.id);
+    expect(after.refundedTotal).toBe(5_000);
+    expect(sum(after.refunds)).toBe(5_000);
+  });
+
+  it('a refund that fits is booked normally, and a duplicate_payment is never counted in the order books', async () => {
+    const o = await newOrder(5_000);
+    const paymentId = await startPay(c, o.id);
+    await stubClick(app, paymentId, 'success');
+    const row = (await app.tdb.db.query.orders.findFirst({
+      where: (x, { eq }) => eq(x.id, o.id),
+    }))!;
+    await app.tdb.db.transaction((tx) =>
+      createRefund(tx, app.ctx, { order: row, paymentId, amount: 2_000, kind: 'return' }),
+    );
+    await app.tdb.db.transaction((tx) =>
+      createRefund(tx, app.ctx, {
+        order: row,
+        paymentId,
+        amount: 9_999,
+        kind: 'duplicate_payment',
+      }),
+    );
+    const after = await getOrder(c, o.id);
+    expect(after.refundedTotal).toBe(2_000);
+    expect(after.refunds.map((x: any) => x.kind).sort()).toEqual(['duplicate_payment', 'return']);
   });
 });
