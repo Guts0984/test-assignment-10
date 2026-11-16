@@ -46,7 +46,7 @@ pnpm install
 docker compose up -d postgres        # tests use a REAL PostgreSQL (each test file creates its own database)
 pnpm lint && pnpm typecheck && pnpm test
 ./scripts/smoke-compose.sh           # needs `docker compose up -d`: hostile client against nginx
-pnpm --filter @shop/e2e install:browsers && pnpm --filter @shop/e2e e2e   # Playwright against http://localhost:8080
+pnpm --filter @shop/e2e install:browsers && pnpm test:stack   # smoke + Playwright on a THROWAWAY stack (own ports, own database, removed afterwards)
 ```
 
 `TEST_DATABASE_URL` (see `.env.example`) points tests at the compose PostgreSQL. CI (`.github/workflows/ci.yml`) runs lint, format check, typecheck and all unit/integration tests on every commit against a PostgreSQL service container, and a second job boots the compose stack and runs the smoke test and the e2e suite.

@@ -12,6 +12,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "pnpm build:packages && pnpm -r --if-present typecheck",
     "test": "pnpm build:packages && pnpm -r --if-present test",
+    "test:stack": "bash scripts/test-stack.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

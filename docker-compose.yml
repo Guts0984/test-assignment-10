@@ -39,7 +39,7 @@ services:
       context: .
       dockerfile: docker/api.Dockerfile
     restart: unless-stopped
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     environment:
       NODE_ENV: production
       API_HOST: 0.0.0.0
