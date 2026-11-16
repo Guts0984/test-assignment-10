@@ -109,3 +109,27 @@ describe('schemas reject hostile input', () => {
     expect(webhookEventSchema.safeParse({ ...ok, type: 'refund.succeeded' }).success).toBe(false); // refundId missing
   });
 });
+
+describe('isRealDate / isoDate', () => {
+  it('accepts real days (incl. leap days) and refuses days that only match the shape', async () => {
+    const { isRealDate, isoDate } = await import('../src');
+    for (const ok of ['2024-02-29', '2026-12-31', '2026-01-01', '2000-02-29', '0099-03-04'])
+      expect(isRealDate(ok), ok).toBe(true);
+    for (const bad of [
+      '2026-02-30',
+      '2025-02-29',
+      '1900-02-29',
+      '2026-04-31',
+      '2026-00-10',
+      '2026-13-01',
+      '2026-01-00',
+      '2026-1-1',
+      '26-01-01',
+      '2026-01-01T00:00',
+      '',
+    ])
+      expect(isRealDate(bad), bad).toBe(false);
+    expect(isoDate.safeParse('2026-02-30').success).toBe(false);
+    expect(isoDate.safeParse('2026-02-28').success).toBe(true);
+  });
+});

@@ -17,6 +17,7 @@ const cart: CartDto = {
   afterDiscount: 100_000,
   delivery: { pickup: 0, courier: 10_000 },
   hasPriceChanges: false,
+  reservationMinutes: 15,
   hasStockProblems: false,
 };
 
@@ -113,6 +114,25 @@ describe('address form validation (schema)', () => {
       postalCode: '01001',
     });
     expect(toOrderCreate({ ...values, apartment: '' }, 1).address).not.toHaveProperty('apartment');
+  });
+});
+
+describe('<CheckoutForm /> reservation note', () => {
+  it('shows the reservation time the SERVER uses, not a hard-coded 15 minutes', () => {
+    for (const [minutes, text] of [
+      [1, /reserved for 1 minute\./],
+      [45, /reserved for 45 minutes\./],
+      [15, /reserved for 15 minutes\./],
+    ] as const) {
+      const { unmount } = renderWith(
+        <CheckoutForm
+          cart={{ ...cart, reservationMinutes: minutes }}
+          onCreated={() => undefined}
+        />,
+      );
+      expect(screen.getByText(text)).toBeInTheDocument();
+      unmount();
+    }
   });
 });
 

@@ -12,6 +12,7 @@ const cart = (over: Partial<CartDto> = {}): CartDto => ({
   afterDiscount: 93_000,
   delivery: { pickup: 0, courier: 10_000 },
   hasPriceChanges: false,
+  reservationMinutes: 15,
   hasStockProblems: false,
   ...over,
 });

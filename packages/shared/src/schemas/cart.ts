@@ -45,5 +45,7 @@ export const cartDtoSchema = z.object({
   /** quick flags for the UI */
   hasPriceChanges: z.boolean(),
   hasStockProblems: z.boolean(),
+  /** how long an order holds its goods before it expires (server setting, shown at checkout) */
+  reservationMinutes: z.number().int().min(1),
 });
 export type CartDto = z.infer<typeof cartDtoSchema>;

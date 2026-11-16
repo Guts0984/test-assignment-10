@@ -139,6 +139,7 @@ export async function getCart(ctx: AppCtx, userId: string): Promise<CartDto> {
     },
     hasPriceChanges: lines.some((l) => l.priceChanged),
     hasStockProblems: lines.some((l) => l.insufficientStock),
+    reservationMinutes: ctx.env.RESERVATION_MINUTES,
   };
 }
 

@@ -6,6 +6,23 @@ import { AppError, codeForStatus } from './errors';
 type ErrorLike = { status?: unknown; statusCode?: unknown; type?: unknown; message?: unknown };
 
 /**
+ * PostgreSQL "data exception" errors (class 22) that only a bad client value can cause: a safety
+ * net behind the validation, so a value nobody thought of is a 400 and not a 500.
+ *   22001 string too long   22003 number out of range   22007/22008 bad date or time
+ *   22021 bad byte sequence (NUL)   22P02 bad text representation   22P05 untranslatable character
+ */
+const CLIENT_CAUSED_PG_CODES = new Set(['22001', '22003', '22007', '22008', '22021', '22P02', '22P05']);
+
+export function pgErrorCode(e: unknown): string | undefined {
+  for (let cur: unknown = e, i = 0; cur && typeof cur === 'object' && i < 4; i++) {
+    const code = (cur as { code?: unknown }).code;
+    if (typeof code === 'string' && /^[0-9A-Z]{5}$/.test(code)) return code;
+    cur = (cur as { cause?: unknown }).cause;
+  }
+  return undefined;
+}
+
+/**
  * One error format for the whole API: { error: { code, message, details?, requestId } }.
  * Anything unexpected becomes a generic 500 WITHOUT leaking internals; anything caused by the
  * client (bad JSON, too large, validation, ...) stays a 4xx.
@@ -41,6 +58,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = exception.getStatus();
       code = codeForStatus(status);
       message = status >= 500 ? 'Internal server error' : exception.message;
+    } else if (CLIENT_CAUSED_PG_CODES.has(pgErrorCode(exception) ?? '')) {
+      status = 400;
+      code = 'validation_error';
+      message = 'Invalid request';
     } else {
       const e = exception as ErrorLike | null;
       const s = Number(e?.status ?? e?.statusCode);

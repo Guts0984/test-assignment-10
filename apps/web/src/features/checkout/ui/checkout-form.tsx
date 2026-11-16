@@ -181,7 +181,9 @@ export function CheckoutForm({
         <h2 className="font-semibold">{t('summary')}</h2>
         <TotalsList totals={totals} />
       </section>
-      <p className="text-sm text-muted-foreground">{t('reserveNote', { minutes: 15 })}</p>
+      <p className="text-sm text-muted-foreground">
+        {t('reserveNote', { minutes: cart.reservationMinutes })}
+      </p>
       <Button type="submit" size="lg" disabled={create.isPending}>
         {create.isPending ? t('placing') : t('placeOrder')}
       </Button>
