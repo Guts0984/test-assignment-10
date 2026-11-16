@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+coverage
+pnpm-lock.yaml
+packages/db/migrations
+playwright-report
+test-results
+plan.md
+test-assignment-10.md
