@@ -1,0 +1,33 @@
+{
+  "name": "@shop/db",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node dist/cli.js migrate",
+    "db:seed": "node dist/cli.js seed",
+    "db:bootstrap": "node dist/cli.js bootstrap"
+  },
+  "dependencies": {
+    "@shop/shared": "workspace:*",
+    "drizzle-orm": "^0.45.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.0",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.0"
+  }
+}

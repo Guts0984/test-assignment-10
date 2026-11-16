@@ -1,5 +1,8 @@
 packages:
   - apps/*
   - packages/*
+
+# esbuild (drizzle-kit, tsx, vite) ships its binary as an optional dependency; the postinstall
+# script is only an optimisation, so builds are allowed explicitly.
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
